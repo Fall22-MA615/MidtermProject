@@ -1,49 +1,25 @@
 
-## The purpose of this R script is to get you started on the
-## midterm project. 
-
 library(tidyverse)
 library(magrittr)
 library(readxl)
+
 
 ## Start by reading the data
 strawb <- read_xlsx("strawberries-2022oct30-a.xlsx",col_names = TRUE)
 
 ## Get the column names and index them
-cnames <- colnames(strawb)
+cnames <- colnames(strawb) 
+
 x <- 1:dim(strawb)[2]
 
-## Explore data by viewing it in R.  
-## Double click the strawb data frame to lauch the view() function.
-## The data frame has 1008 rows, so you can't get very far by
-## simply scrolling around.  But, you can generate some initial
-## questions to help you explore using R functions from the
-## tidyverse.  
-##
-## It looks like some of the columns may be blank or may contain 
-## a single unique value.  These columns can be eliminated without 
-## losing any information.
-
-## Start by examining the content of the columns
-
-## Column 1 contains two unique values.  
-## Retain column 1 -- those values might be needed.
 unique(strawb[1])
 
-## Column 2 -- contains the years included in this dataset.
-## Keep column 2, of course.
 unique(strawb[2])
 
 ## Column 3 -- contains the time periods covered by in the dataset.
 ## There's only one -- years.  No info here.  Drop it
 unique(strawb[3])
 
-## you don't have to do this one column at a time.
-## Note that the cells of columns that are empty contain NA, so
-## the number of unique values in these columns is 1, just 
-## like column_3.
-
-## Set T as an indicator
 T <- NULL
 
 ## Collect number of unique rows in each column
@@ -115,8 +91,10 @@ r_thiram_1 <- grep("Thiram",
 ## Carbendazim, Bifenthrin, methyl bromide, 1,3-dichloropropene,
 ## chloropicrin, Telone
 
+##Carbendazim found empty
 df_carbendazim <- grep("carbendazim", 
                        strawb$`Domain Category`, ignore.case = T)
+
 
 ## Bifenthrin found 27
 df_Bifenthrin <- grep("Bifenthrin", 
@@ -186,7 +164,7 @@ Domain_Category_organic <- grep("organic",
 ## All three are the same
 
 same <- (intersect(type_organic, Domain_organic)==
-         intersect(type_organic, Domain_organic))
+         intersect(type_organic, Domain_Category_organic))
 length(same)==length(type_organic)
 
 
@@ -272,7 +250,7 @@ rm(x, T, drop_cols, temp1, r_thiram, r_thiram_1,
   x = length(before_cols)
 
    for(i in 1:x){
-    b <- length(unlist(strawb_chem[,i] %>% unique()) )
+    b <- length(unlist(strawb_chem[,i] %>% unique()))
     T <- c(T,b)
    }
     
@@ -378,6 +356,7 @@ bifen <- strawb_chem %>% slice(bb)
 
 ## remove the parens
 
+
 strawb_chem$chem_name <- str_remove_all(strawb_chem$chem_name, "\\(")
 
 strawb_chem$chem_name <- str_remove_all(strawb_chem$chem_name, "\\)")
@@ -405,5 +384,85 @@ sum(aa==bb)==length(aa)
 
 ## yes, they correspond
 
-## So, 
+## So, we can say all units except 'LB' unit corresponds to 'AVG'
+## The category column is meaningless. Let's delete the category column.
+strawb_chem <- strawb_chem %>% select(-category)
+
+##The chem_code column seems meaningless.
+strawb_chem <- strawb_chem %>% select(-chem_code)
+##Let's see the if there's NA in chem_code
+##First, remove () in colum Value.
+strawb_chem$Value <- str_remove_all(strawb_chem$Value, "\\(")
+strawb_chem$Value <- str_remove_all(strawb_chem$Value, "\\)")
+
+##Let's remove NA in column Value.
+aa <- which(strawb_chem$Value == "NA")
+length(aa)
+chem <- 1:2112
+cc <- setdiff(chem, aa)
+length(cc)
+strawb_chem <- strawb_chem %>% slice(cc)
+#Now, the obs of strawb_chem is 1878.
+
+##Let's remove D in column Value.
+aa <- which(strawb_chem$Value=="D")
+chem <- 1:1878
+cc <- setdiff(chem, aa)
+strawb_chem <- strawb_chem %>% slice(cc)
+
+##Now, the strawb_chem dataset's observation is 900.
+
+##What's the type of column Value?
+typeof(strawb_chem$Value)
+
+##It's character.
+##Let's change it to numeric.
+strawb_chem$Value <- as.numeric(strawb_chem$Value)
+
+##NAs introduced. Let's remove it.
+aa <- which(is.na(strawb_chem$Value))
+chem <- 1:900
+cc <- setdiff(chem, aa)
+strawb_chem <- strawb_chem %>% slice(cc)
+
+##clean the data.
+rm(temp1,aa, after_cols,before_cols,cc,chem,drop_cols,T,x,b,i)
+
+##Let's go back to column units.
+unique(strawb_chem[3]) 
+##values are "LB", "LB / ACRE / APPLICATION","LB / ACRE / YEAR".
+
+##Seperate the datasets by units.
+
+##grep the row numbers of "LB / ACRE / APPLICATION"
+aa <- grep("APPLICATION",strawb_chem$units,ignore.case = T)
+
+##dataset of "LB / ACRE / APPLICATION" unit
+chem_app <- strawb_chem %>% slice(aa, preserve=F)
+chem_app <- chem_app %>% select(-units)
+
+##grep the row numbers of "LB / ACRE / YEAR"
+aa <- grep("YEAR",strawb_chem$units,ignore.case = T)
+
+##dataset of "LB / ACRE / YEAR" unit
+chem_year <- strawb_chem %>% slice(aa, preserve=F)
+chem_year <- chem_year %>% select(-units)
+
+
+##grep the row numbers of "LB"
+aa <- grep("^ LB$",strawb_chem$units,ignore.case = T)
+
+##dataset of "LB" unit
+chem_lb <- strawb_chem %>% slice(aa, preserve=F)
+chem_lb <- chem_lb %>% select(-units)
+
+##Now, it's time to clean the non_organic dataset.
+
+
+
+
+
+
+
+
 
