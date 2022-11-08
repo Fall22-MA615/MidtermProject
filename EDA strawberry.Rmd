@@ -1,12 +1,19 @@
-
+---
+title: "EDA strawberry"
+author: "Jiun Lee"
+date: "2022-11-07"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(magrittr)
 library(readxl)
-
-
-## Start by reading the data
 strawb <- read_xlsx("strawberries-2022oct30-a.xlsx",col_names = TRUE)
+```
+##This document got a reference from ag_data_introduction.R by Haviland. I followed the instruction in the file and added my codes for cleaning the strawberry dataset.
 
+```{r}
 ## Get the column names and index them
 cnames <- colnames(strawb) 
 x <- 1:dim(strawb)[2]
@@ -14,122 +21,20 @@ T <- NULL
 
 ## Collect number of unique rows in each column
 for(i in x){T <- c(T, dim(unique(strawb[i]))[1])}
-## Use T to select columns to drop -- 
 drop_cols <- cnames[which(T == 1)]
-## Now, drop the columns with only one unique value.
 strawb %<>% select(!all_of(drop_cols))
 ## Let's arrange the data frame by year and state.
 strawb %<>% arrange(Year, State)
 
-
-## Look at the strawb data frame again. You can see that the 
-## columns need work. The State ANSI column contains a unique
-## code for each state. If you need to access US Census data for
-## the states, this code will come in handy.
-
-colnames(strawb)
-
-## now look at the `Data Item` column
-
-temp1 <- strawb %>% select(`Data Item`) %>% 
-         distinct()
-
-## Look at temp1!  There's a lot going on there.
-## In fact, it's at least three columns packed into one.
-## Use separate() to split it up
-
-## When you run this code you can see that there are 
-## some rows where `Data Item` has 4 comma-separated 
-## data items.  Look at the warning on the Console 
-## after 
-
-strawb2 <- strawb %>% separate(col=`Data Item`,
-                into = c("Strawberries", "items", "units"),
-                sep = ",",
-                fill = "right")
-
-## try 4 columns
-
-strawb3 <- strawb %>% separate(col=`Data Item`,
-            into = c("Strawberries", "type", "items", "units"),
-                               sep = ",",
-                               fill = "right")
-
-## That worked. Clean up the dat.
-
-rm(strawb2, strawb3)
-
+##clean the data.
 strawb %<>% separate(col=`Data Item`,
                     into = c("Strawberries", "type", "items", "units"),
                     sep = ",",
                     fill = "right")
-
-## now explore the new columns
-
-## we know that "THIRAM" is a chemical in the data, so
-## test for it to check out the way code
-r_thiram <- grep("THIRAM", strawb$`Domain Category`)
-r_thiram_1 <- grep("Thiram", 
-                   strawb$`Domain Category`, 
-                   ignore.case = T)
-
-## Chemicals mentioned in 
-## the "Shoppers Guide to Pesticides in Produce"
-## Carbendazim, Bifenthrin, methyl bromide, 1,3-dichloropropene,
-## chloropicrin, Telone
-
-##Carbendazim found empty
-df_carbendazim <- grep("carbendazim", 
-                       strawb$`Domain Category`, ignore.case = T)
-
-
-## Bifenthrin found 27
-df_Bifenthrin <- grep("Bifenthrin", 
-                       strawb$`Domain Category`, ignore.case = T)
-
-## methyl bromide found 3
-df_methyl_bromide <- grep("methyl bromide", 
-                      strawb$`Domain Category`, ignore.case = T)
-
-## 1,3-dichloropropene empty
-df_1_3_dichloropropene <- grep("1,3-dichloropropene", 
-                          strawb$`Domain Category`, 
-                          ignore.case = T)
-
-## chloropicrin found 18
-df_chloropicrin <- grep("chloropicrin", 
-                               strawb$`Domain Category`, 
-                               ignore.case = T)
-
-## Telone empty
-df_Telone <- grep("Telone", 
-                        strawb$`Domain Category`, 
-                        ignore.case = T)
-
-## We'll come back to chemicals after they 
-## have their own column
-
-## Let's continue cleaning up the columns
-
-temp1 <- strawb %>% select(Strawberries) %>% 
-  distinct()
-
-pr_rec <- grep("STRAWBERRIES - PRICE RECEIVED", 
-                  strawb$Strawberries, 
-                  ignore.case = T)
-
-## looks like it this might be a good time to split this analysis 
-## into oranic and non organic -- and commercial vs chemicals in each.
-
-## some data details
-## NOP is certified organic
-## see https://bityl.co/FOWS
-
-## Look at the HELP for the NASS selector interface
-## https://quickstats.nass.usda.gov/
+```
 
 ## let's track down the organic entries
-
+```{r}
 type_organic <- grep("organic", 
                strawb$type, 
                ignore.case = T)
@@ -142,7 +47,6 @@ Domain_organic <- grep("organic",
                       strawb$Domain, 
                       ignore.case = T)
 
-
 Domain_Category_organic <- grep("organic", 
                        strawb$`Domain Category`, 
                        ignore.case = T)
@@ -154,22 +58,15 @@ same <- (intersect(type_organic, Domain_organic)==
          intersect(type_organic, Domain_Category_organic))
 length(same)==length(type_organic)
 
-
 org_rows <- intersect(type_organic, Domain_organic)
 
 strawb_organic <- strawb %>% slice(org_rows, preserve = FALSE)
 
 strawb_non_organic <- strawb %>% filter(!row_number() %in% org_rows)
-
-## ok strawb has been split
-## Doesn't look like we are going to get chemical data
-## split by organic v non_organic
-## so We will need to count on 
-## https://bityl.co/FOcF
-## https://bityl.co/FOcW
+```
 
 ## now separate the chemical data
-
+```{r}
 temp1 <- strawb_non_organic %>% select(type) %>% 
   distinct()
 
@@ -224,13 +121,13 @@ rm(x, T, drop_cols, temp1, r_thiram, r_thiram_1,
    pr_rec, type_organic, items_organic, Domain_organic,
    Domain_Category_organic, same, org_rows, chem_rows,
    chem_rows_1, chem_rows_2, ins, ins_2, cnames, i)
-
+```
 ## now the environment lists the tibbles strawb, strawb_chem,
 ## strawb_non_organic, and strawb_organic
 
 ## first drop the "no-info" columns  Since we will need to do this 
 ## for all three tibbles, write a functin
-
+```{r}
 
   before_cols = colnames(strawb_chem)
   T = NULL
@@ -326,42 +223,26 @@ strawb_chem$dc1 %>% unique()
 
 strawb_chem %<>% rename(chem_types = dc1)
 
-
-## Now let's get the units and categories sorted out
-## we can see that the chemicals appear many times each
-## to investigate, pick one
-
-bb  <- grep("BIFENTHRIN", 
-            strawb_chem$chem_name, 
-            ignore.case = T)
-
-bifen <- strawb_chem %>% slice(bb)
-
-## now look at the befen tibble you just made
-
 ## now fix the chem_name column
-
 ## remove the parens
 
 
 strawb_chem$chem_name <- str_remove_all(strawb_chem$chem_name, "\\(")
 strawb_chem$chem_name <- str_remove_all(strawb_chem$chem_name, "\\)")
 
+
 ## separate chem_name and chem_code
 
 strawb_chem %<>% separate(col = chem_name,
                           into = c("chem_name","chem_code"),
                           sep = "=",
-                          fill = "right"
-                            ) 
-
+                          fill = "right") 
+```
 
 ## now fill in a label fot NA in the category column
-
 ## first check that "lb" in the units column corresponds 
 ## to NA in the category column
-
-
+```{r}
 aa <- which(strawb_chem$units == " LB")
 
 bb <- which(is.na(strawb_chem$category))
@@ -369,10 +250,11 @@ bb <- which(is.na(strawb_chem$category))
 sum(aa==bb)==length(aa)
 
 ## yes, they correspond
-
 ## So, we can say all units except 'LB' unit corresponds to 'AVG'
+
 ## The category column is meaningless. Let's delete the category column.
 strawb_chem <- strawb_chem %>% select(-category)
+
 
 ##The chem_code column seems meaningless.
 strawb_chem <- strawb_chem %>% select(-chem_code)
@@ -441,3 +323,101 @@ aa <- grep("^ LB$",strawb_chem$units,ignore.case = T)
 ##dataset of "LB" unit
 chem_lb <- strawb_chem %>% slice(aa, preserve=F)
 chem_lb <- chem_lb %>% select(-units)
+```
+
+##There are some safe chemicals. Let's get the dataset of them.
+```{r cars}
+#find a row numbers of notorious chemicals
+bb  <- grep("BIFENTHRIN", 
+            strawb_chem$chem_name, 
+            ignore.case = T)
+b <- strawb_chem %>% slice(bb, preserve=F)
+#chemtype:insecticide
+
+cc <- grep("Carbendazim", 
+            strawb_chem$chem_name, 
+            ignore.case = T)  ##empty
+
+mm <- grep("MENTHYL BROMIDE", 
+            strawb_chem$chem_name, 
+            ignore.case = T)  ##empty
+
+dd <- grep("DICHLOROPROPENE", 
+            strawb_chem$chem_name, 
+            ignore.case = T)
+d <- strawb_chem %>% slice(dd, preserve=F)
+#chemtype:other
+
+tt <- grep("Telone", 
+            strawb_chem$chem_name, 
+            ignore.case = T) ##empty
+
+ch <- grep("CHLOROPICRIN", 
+            strawb_chem$chem_name, 
+            ignore.case = T)
+chc <- strawb_chem %>% slice(ch, preserve=F)
+#chemtype : other
+
+#combine them.
+danger <- c(bb,ch,dd)
+#get a dataset except the rows of dangerous chemicals
+chem_x_danger <- strawb_chem %>% filter(!row_number() %in% danger)
+rm(dd,ch,danger)
+```
+
+##Let's get the dataset of sales for organic
+```{r pressure, echo=FALSE}
+##rownumbers of sales type column = rownumbers of items not having sales (all rows - rows that having sales)
+
+#units column = NA -> total of sales(CWT,$)
+total <- which(is.na(strawb_organic$units))
+sales_organic <- strawb_organic %>% filter(!row_number() %in% total)
+
+cnames <- colnames(sales_organic) 
+x <- 1:dim(sales_organic)[2]
+T <- NULL
+
+## Collect number of unique rows in each column
+for(i in x){T <- c(T, dim(unique(sales_organic[i]))[1])}
+## Use T to select columns to drop -- 
+drop_cols <- cnames[which(T == 1)]
+## Now, drop the columns with only one unique value.
+sales_organic %<>% select(!all_of(drop_cols))
+##Let's remove the column State ANSI
+sales_organic <- sales_organic %>% select(-'State ANSI')
+
+## remove "MEASURED IN " 
+sales_organic$units <- str_remove_all(sales_organic$units, "MEASURED IN ")
+
+##rename
+sales_organic <- sales_organic %>% rename(units=items)
+
+##seperate items
+sales_organic %<>% separate(col=`items`, 
+                                    into = c("items", "sales"),
+                                    sep = "-", 
+                                    fill = "right")
+##remove sales column
+sales_organic %<>% select(-sales)
+## Let's arrange the data frame by units
+sales_organic %<>% arrange(units)
+
+#remove (D)
+sales_organic <- sales_organic[-which(sales_organic$Value == "(D)"),]
+
+```
+
+
+##dataset of sales for unorganic?
+```{r pressure, echo=FALSE}
+#Let's get the non-chemical non-organic dataset.
+chem_rows <- grep("BEARING - APPLICATIONS", 
+                       strawb_non_organic$type, 
+                       ignore.case = T)
+nonorg_x_chem <- strawb_non_organic %>% filter(!row_number() %in% chem_rows)
+
+##nonorg_x_chem doesn't look meaningful.
+##It means, we can consider only 'strawb_chem' dataset as nonorganic dataset.
+
+```
+
