@@ -427,8 +427,9 @@ sales_organic %>%
   labs(y="CWT")
 rm(cnames,drop_cols,i,T,total,x)
 ```
-
-####From the dataset 'sales_organic', we can verify the increase in sales of organic strawberries in most states. This means, the popularity of organic sales is getting higher, and it's promising for improving public health in the US. From this result, there should be an effort to implement the policy for boosting the supply of organic strawberries at reasonable prices.
+##From the dataset 'sales_organic', we can verify the increase in sales of organic strawberries in most states. 
+##This means, the popularity of organic sales is getting higher, and it's promising for improving public health in the US. 
+##From this result, there should be an effort to implement the policy for boosting the supply of organic strawberries at reasonable prices.
 
 
 ##dataset of sales for unorganic?
