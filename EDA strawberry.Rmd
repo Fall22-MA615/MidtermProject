@@ -125,8 +125,7 @@ rm(x, T, drop_cols, temp1, r_thiram, r_thiram_1,
 ## now the environment lists the tibbles strawb, strawb_chem,
 ## strawb_non_organic, and strawb_organic
 
-## first drop the "no-info" columns  Since we will need to do this 
-## for all three tibbles, write a functin
+## first drop the "no-info" columns
 ```{r}
 
   before_cols = colnames(strawb_chem)
@@ -365,13 +364,12 @@ chem_x_danger <- strawb_chem %>% filter(!row_number() %in% danger)
 rm(dd,ch,danger)
 ```
 
-##Let's get the dataset of sales for organic
-```{r pressure, echo=FALSE}
-##rownumbers of sales type column = rownumbers of items not having sales (all rows - rows that having sales)
-
-#units column = NA -> total of sales(CWT,$)
+##Let's get the dataset of 'sales for organic'
+```{r setup, include=FALSE}
+#units column = NA -> total sales(CWT,$) of FRESH MARKET AND PROCESSING
+#Since we don't have to see the sales of FRESH MARKET AND PROCESSING, let's only remain the total sales.
 total <- which(is.na(strawb_organic$units))
-sales_organic <- strawb_organic %>% filter(!row_number() %in% total)
+sales_organic <- strawb_organic %>% slice(total)
 
 cnames <- colnames(sales_organic) 
 x <- 1:dim(sales_organic)[2]
@@ -387,25 +385,50 @@ sales_organic %<>% select(!all_of(drop_cols))
 sales_organic <- sales_organic %>% select(-'State ANSI')
 
 ## remove "MEASURED IN " 
-sales_organic$units <- str_remove_all(sales_organic$units, "MEASURED IN ")
+sales_organic$items <- str_remove_all(sales_organic$items, "MEASURED IN ")
 
 ##rename
 sales_organic <- sales_organic %>% rename(units=items)
 
-##seperate items
-sales_organic %<>% separate(col=`items`, 
-                                    into = c("items", "sales"),
-                                    sep = "-", 
-                                    fill = "right")
-##remove sales column
-sales_organic %<>% select(-sales)
 ## Let's arrange the data frame by units
 sales_organic %<>% arrange(units)
 
 #remove (D)
 sales_organic <- sales_organic[-which(sales_organic$Value == "(D)"),]
 
+#ready for making graph
+sales_organic$Year <- as.character(sales_organic$Year)
+sales_organic$Value <- as.numeric(sales_organic$Value)
+
+sales_organic$State <- str_replace(sales_organic$State , "CALIFORNIA", "CA")
+sales_organic$State <- str_replace(sales_organic$State , "NEW JERSEY", "NJ")
+sales_organic$State <- str_replace(sales_organic$State , "PENNSYLVANIA", "PA")
+sales_organic$State <- str_replace(sales_organic$State , "FLORIDA", "FL")
+sales_organic$State <- str_replace(sales_organic$State , "OREGON", "OR")
+sales_organic$State <- str_replace(sales_organic$State , "NEW YORK", "NY")
+
+
+#graph : sales for organic strawberries in 2016 and 2019 with $ unit
+sales_organic %>% 
+  filter(units==" $") %>%
+  group_by(Year) %>%
+  ggplot(aes(x=State,y=Value,fill=Year))+
+  scale_y_log10()+
+  geom_col(position = "dodge")+
+  labs(y="$")
+
+#graph : sales for organic strawberries in 2016 and 2019 with CWT unit
+sales_organic %>% 
+  filter(units==" CWT") %>%
+  group_by(Year) %>%
+  ggplot(aes(x=State,y=Value,fill=Year))+
+  scale_y_log10()+
+  geom_col(position = "dodge")+
+  labs(y="CWT")
+rm(cnames,drop_cols,i,T,total,x)
 ```
+
+####From the dataset 'sales_organic', we can verify the increase in sales of organic strawberries in most states. This means, the popularity of organic sales is getting higher, and it's promising for improving public health in the US. From this result, there should be an effort to implement the policy for boosting the supply of organic strawberries at reasonable prices.
 
 
 ##dataset of sales for unorganic?
@@ -419,5 +442,6 @@ nonorg_x_chem <- strawb_non_organic %>% filter(!row_number() %in% chem_rows)
 ##nonorg_x_chem doesn't look meaningful.
 ##It means, we can consider only 'strawb_chem' dataset as nonorganic dataset.
 
+##in the dataset of strawb_chem, there's no information of sales. It is only amount of chemicals used.
 ```
 
